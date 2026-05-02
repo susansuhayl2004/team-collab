@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="TeamCollab – AI-powered team coordination platform to simplify workflows and task visibility." />
+  <title>TeamCollab – Smart Team Coordination</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Skip to main content for accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Auth Screen -->
+  <div id="auth-screen" class="auth-screen" role="main" aria-label="Sign in to TeamCollab">
+    <div class="auth-bg">
+      <div class="auth-orb orb-1"></div>
+      <div class="auth-orb orb-2"></div>
+      <div class="auth-orb orb-3"></div>
+    </div>
+    <div class="auth-card glass">
+      <div class="auth-logo">
+        <span class="logo-icon" aria-hidden="true"><i class="fa-solid fa-people-group"></i></span>
+        <h1 class="logo-text">TeamCollab</h1>
+        <p class="logo-sub">AI-Powered Team Coordination</p>
+      </div>
+      <div class="auth-features">
+        <div class="feature-pill"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Real-time Chat</div>
+        <div class="feature-pill"><i class="fa-solid fa-brain" aria-hidden="true"></i> Gemini AI Assistant</div>
+        <div class="feature-pill"><i class="fa-solid fa-columns" aria-hidden="true"></i> Kanban Board</div>
+      </div>
+      <button id="google-signin-btn" class="google-btn" aria-label="Sign in with Google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" aria-hidden="true" width="22" height="22" />
+        Sign in with Google
+      </button>
+      <button id="demo-btn" class="demo-btn" aria-label="Try demo mode without signing in">
+        <i class="fa-solid fa-play" aria-hidden="true"></i> Try Demo Mode
+      </button>
+      <p class="auth-note">Powered by Firebase &amp; Google Gemini</p>
+    </div>
+  </div>
+
+  <!-- App Shell -->
+  <div id="app" class="app hidden" role="application" aria-label="TeamCollab application">
+
+    <!-- Sidebar -->
+    <nav id="sidebar" class="sidebar glass" aria-label="Main navigation">
+      <div class="sidebar-logo">
+        <span aria-hidden="true"><i class="fa-solid fa-people-group"></i></span>
+        <span class="sidebar-logo-text">TeamCollab</span>
+      </div>
+
+      <div class="user-card">
+        <img id="user-avatar" src="" alt="User avatar" class="user-avatar" width="36" height="36" />
+        <div class="user-info">
+          <span id="user-name" class="user-name">User</span>
+          <span class="user-status-badge online" aria-label="Online status">● Online</span>
+        </div>
+      </div>
+
+      <ul class="nav-list" role="list">
+        <li><button class="nav-item active" data-view="dashboard" aria-current="page" aria-label="Dashboard">
+          <i class="fa-solid fa-house" aria-hidden="true"></i><span>Dashboard</span>
+        </button></li>
+        <li><button class="nav-item" data-view="kanban" aria-label="Kanban Board">
+          <i class="fa-solid fa-table-columns" aria-hidden="true"></i><span>Kanban Board</span>
+        </button></li>
+        <li><button class="nav-item" data-view="chat" aria-label="Team Chat">
+          <i class="fa-solid fa-comments" aria-hidden="true"></i><span>Team Chat</span>
+          <span id="msg-badge" class="badge hidden" aria-label="Unread messages">0</span>
+        </button></li>
+        <li><button class="nav-item" data-view="ai" aria-label="AI Assistant">
+          <i class="fa-solid fa-robot" aria-hidden="true"></i><span>AI Assistant</span>
+          <span class="badge-new" aria-hidden="true">AI</span>
+        </button></li>
+        <li><button class="nav-item" data-view="team" aria-label="Team Members">
+          <i class="fa-solid fa-users" aria-hidden="true"></i><span>Team</span>
+        </button></li>
+      </ul>
+
+      <button id="signout-btn" class="signout-btn" aria-label="Sign out">
+        <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i><span>Sign Out</span>
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main-content">
+
+      <!-- Top Bar -->
+      <header class="topbar" role="banner">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+        <div class="topbar-title" id="page-title" aria-live="polite">Dashboard</div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="add-task-btn" aria-label="Add new task">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          </button>
+          <button class="icon-btn" id="notif-btn" aria-label="Notifications" aria-haspopup="true">
+            <i class="fa-solid fa-bell" aria-hidden="true"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Views -->
+      <div class="view-container">
+
+        <!-- Dashboard View -->
+        <section id="view-dashboard" class="view active" aria-label="Dashboard overview">
+          <div class="stats-grid">
+            <div class="stat-card glass" role="region" aria-label="Total tasks">
+              <div class="stat-icon purple"><i class="fa-solid fa-list-check" aria-hidden="true"></i></div>
+              <div class="stat-info">
+                <div class="stat-num" id="stat-total">0</div>
+                <div class="stat-label">Total Tasks</div>
+              </div>
+            </div>
+            <div class="stat-card glass" role="region" aria-label="In progress tasks">
+              <div class="stat-icon blue"><i class="fa-solid fa-spinner" aria-hidden="true"></i></div>
+              <div class="stat-info">
+                <div class="stat-num" id="stat-inprogress">0</div>
+                <div class="stat-label">In Progress</div>
+              </div>
+            </div>
+            <div class="stat-card glass" role="region" aria-label="Completed tasks">
+              <div class="stat-icon green"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
+              <div class="stat-info">
+                <div class="stat-num" id="stat-done">0</div>
+                <div class="stat-label">Completed</div>
+              </div>
+            </div>
+            <div class="stat-card glass" role="region" aria-label="Team members">
+              <div class="stat-icon orange"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+              <div class="stat-info">
+                <div class="stat-num" id="stat-members">0</div>
+                <div class="stat-label">Team Members</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="dash-panel glass">
+              <h2 class="panel-title"><i class="fa-solid fa-fire" aria-hidden="true"></i> Recent Activity</h2>
+              <ul id="activity-feed" class="activity-feed" role="list" aria-label="Recent activity feed">
+                <li class="activity-empty">No activity yet. Create a task or send a message!</li>
+              </ul>
+            </div>
+            <div class="dash-panel glass">
+              <h2 class="panel-title"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Task Progress</h2>
+              <div class="progress-bars" id="progress-bars" role="group" aria-label="Task progress by status">
+                <div class="prog-row">
+                  <span class="prog-label">To Do</span>
+                  <div class="prog-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    <div class="prog-fill todo-fill" id="prog-todo"></div>
+                  </div>
+                  <span class="prog-count" id="cnt-todo">0</span>
+                </div>
+                <div class="prog-row">
+                  <span class="prog-label">In Progress</span>
+                  <div class="prog-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    <div class="prog-fill inprogress-fill" id="prog-inprogress"></div>
+                  </div>
+                  <span class="prog-count" id="cnt-inprogress">0</span>
+                </div>
+                <div class="prog-row">
+                  <span class="prog-label">Review</span>
+                  <div class="prog-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    <div class="prog-fill review-fill" id="prog-review"></div>
+                  </div>
+                  <span class="prog-count" id="cnt-review">0</span>
+                </div>
+                <div class="prog-row">
+                  <span class="prog-label">Done</span>
+                  <div class="prog-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    <div class="prog-fill done-fill" id="prog-done"></div>
+                  </div>
+                  <span class="prog-count" id="cnt-done">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Kanban Board View -->
+        <section id="view-kanban" class="view hidden" aria-label="Kanban task board">
+          <div class="kanban-toolbar">
+            <h2 class="view-heading">Kanban Board</h2>
+            <button class="btn-primary" id="kanban-add-btn" aria-label="Add new task to board">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Task
+            </button>
+          </div>
+          <div class="kanban-board" role="region" aria-label="Task columns">
+            <div class="kanban-col" data-status="todo" aria-label="To Do column" role="list">
+              <div class="kanban-col-header todo-header">
+                <span><i class="fa-solid fa-circle" aria-hidden="true"></i> To Do</span>
+                <span class="col-count" id="col-count-todo" aria-label="Number of tasks">0</span>
+              </div>
+              <div class="kanban-cards" id="col-todo" role="list" aria-label="To Do tasks" aria-dropeffect="move"></div>
+            </div>
+            <div class="kanban-col" data-status="in-progress" aria-label="In Progress column">
+              <div class="kanban-col-header inprogress-header">
+                <span><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i> In Progress</span>
+                <span class="col-count" id="col-count-inprogress">0</span>
+              </div>
+              <div class="kanban-cards" id="col-inprogress" role="list" aria-label="In Progress tasks" aria-dropeffect="move"></div>
+            </div>
+            <div class="kanban-col" data-status="review" aria-label="In Review column">
+              <div class="kanban-col-header review-header">
+                <span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Review</span>
+                <span class="col-count" id="col-count-review">0</span>
+              </div>
+              <div class="kanban-cards" id="col-review" role="list" aria-label="Review tasks" aria-dropeffect="move"></div>
+            </div>
+            <div class="kanban-col" data-status="done" aria-label="Done column">
+              <div class="kanban-col-header done-header">
+                <span><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Done</span>
+                <span class="col-count" id="col-count-done">0</span>
+              </div>
+              <div class="kanban-cards" id="col-done" role="list" aria-label="Done tasks" aria-dropeffect="move"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chat View -->
+        <section id="view-chat" class="view hidden" aria-label="Team chat">
+          <div class="chat-layout">
+            <div class="chat-main glass">
+              <div class="chat-header">
+                <i class="fa-solid fa-hashtag" aria-hidden="true"></i>
+                <span>general</span>
+                <button class="btn-sm" id="summarize-btn" title="AI Summarize conversation" aria-label="Summarize conversation with AI">
+                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Summarize
+                </button>
+              </div>
+              <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-label="Chat messages" tabindex="0"></div>
+              <form class="chat-input-row" id="chat-form" aria-label="Send a message">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Type a message… (Enter to send)" maxlength="2000" aria-label="Message input" autocomplete="off" />
+                <button type="submit" class="send-btn" aria-label="Send message">
+                  <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI Assistant View -->
+        <section id="view-ai" class="view hidden" aria-label="AI Assistant powered by Gemini">
+          <div class="ai-layout">
+            <div class="ai-header glass">
+              <div class="ai-header-info">
+                <div class="ai-avatar" aria-hidden="true"><i class="fa-solid fa-robot"></i></div>
+                <div>
+                  <h2 class="ai-name">TeamBot</h2>
+                  <span class="ai-powered">Powered by Google Gemini</span>
+                </div>
+              </div>
+              <div class="ai-suggestions" role="group" aria-label="Quick suggestions">
+                <button class="suggestion-chip" data-prompt="Summarize our team's current priorities" aria-label="Ask about team priorities">📋 Team Priorities</button>
+                <button class="suggestion-chip" data-prompt="Give me tips for better team communication" aria-label="Ask for communication tips">💬 Communication Tips</button>
+                <button class="suggestion-chip" data-prompt="How should we organize our sprint tasks?" aria-label="Ask about sprint organization">🚀 Sprint Planning</button>
+                <button class="suggestion-chip" data-prompt="Write a team standup template" aria-label="Generate standup template">📝 Standup Template</button>
+              </div>
+            </div>
+            <div id="ai-messages" class="ai-messages" role="log" aria-live="polite" aria-label="AI conversation" tabindex="0">
+              <div class="ai-welcome">
+                <div class="ai-avatar-lg" aria-hidden="true"><i class="fa-solid fa-robot"></i></div>
+                <h3>Hi, I'm TeamBot! 👋</h3>
+                <p>I'm your AI-powered team assistant. I can help you summarize conversations, plan sprints, draft messages, and boost your team's productivity.</p>
+              </div>
+            </div>
+            <form class="ai-input-row" id="ai-form" aria-label="Ask AI assistant">
+              <input type="text" id="ai-input" class="chat-input" placeholder="Ask TeamBot anything…" maxlength="2000" aria-label="AI prompt input" autocomplete="off" />
+              <button type="submit" class="send-btn" aria-label="Send to AI">
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Team View -->
+        <section id="view-team" class="view hidden" aria-label="Team members">
+          <div class="team-toolbar">
+            <h2 class="view-heading">Team Members</h2>
+            <button class="btn-primary" id="invite-btn" aria-label="Invite team member">
+              <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Invite
+            </button>
+          </div>
+          <div id="team-grid" class="team-grid" role="list" aria-label="Team members list"></div>
+        </section>
+
+      </div><!-- end view-container -->
+    </main>
+  </div><!-- end app -->
+
+  <!-- Task Modal -->
+  <div id="task-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal glass">
+      <div class="modal-header">
+        <h2 id="modal-title">New Task</h2>
+        <button class="modal-close" id="modal-close" aria-label="Close modal"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+      </div>
+      <form id="task-form" class="task-form" novalidate aria-label="Task form">
+        <div class="form-group">
+          <label for="task-title">Task Title <span aria-hidden="true">*</span></label>
+          <input type="text" id="task-title" name="title" required maxlength="200" placeholder="e.g., Design landing page" aria-required="true" />
+          <span class="field-error hidden" id="title-error" role="alert">Title is required.</span>
+        </div>
+        <div class="form-group">
+          <label for="task-desc">Description</label>
+          <textarea id="task-desc" name="description" rows="3" maxlength="1000" placeholder="Add details…"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="task-priority">Priority</label>
+            <select id="task-priority" name="priority" aria-label="Task priority">
+              <option value="low">🟢 Low</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="high">🟠 High</option>
+              <option value="urgent">🔴 Urgent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="task-status">Status</label>
+            <select id="task-status" name="status" aria-label="Task status">
+              <option value="todo" selected>To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="review">Review</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="task-assignee">Assignee</label>
+          <input type="text" id="task-assignee" name="assignee" maxlength="100" placeholder="Name or email" />
+        </div>
+        <div class="form-group">
+          <label for="task-due">Due Date</label>
+          <input type="date" id="task-due" name="dueDate" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="cancel-task" aria-label="Cancel">Cancel</button>
+          <button type="submit" class="btn-primary" aria-label="Save task">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toast-container" class="toast-container" role="region" aria-live="polite" aria-label="Notifications"></div>
+
+  <!-- Firebase & App JS -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
