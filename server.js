@@ -32,7 +32,10 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// ── Security Middleware ────────────────────────────────────────────────────────
+// Trust Cloud Run / GCP load-balancer's reverse proxy so
+// express-rate-limit can read the real client IP from X-Forwarded-For.
+app.set('trust proxy', 1);
+
 
 app.use(helmet({
   contentSecurityPolicy: {

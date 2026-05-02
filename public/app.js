@@ -198,8 +198,56 @@ function renderKanban() {
     container.innerHTML = tasks.length ? tasks.map(taskCard).join('') :
       '<div class="no-tasks" aria-label="No tasks in this column">No tasks here</div>';
   });
+  setupDragAndDrop();
   updateDashboard();
 }
+
+/** Sets up HTML5 drag-and-drop across all Kanban columns. */
+function setupDragAndDrop() {
+  const cards = document.querySelectorAll('.task-card');
+  const dropZones = document.querySelectorAll('.kanban-cards');
+  let draggedId = null;
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', e => {
+      draggedId = card.dataset.id;
+      card.style.opacity = '0.5';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => {
+      card.style.opacity = '';
+      draggedId = null;
+    });
+  });
+
+  dropZones.forEach(zone => {
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      zone.style.background = '#f0f4ff';
+    });
+    zone.addEventListener('dragleave', () => {
+      zone.style.background = '';
+    });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.background = '';
+      if (!draggedId) return;
+      const colKey = zone.id.replace('col-', '');
+      const statusMap = { todo:'todo', inprogress:'in-progress', review:'review', done:'done' };
+      const newStatus = statusMap[colKey];
+      if (!newStatus) return;
+      const task = state.tasks.find(t => t.id === draggedId);
+      if (task && task.status !== newStatus) {
+        task.status = newStatus;
+        addActivity(`Task "${task.title}" moved to ${newStatus}`, 'arrows-left-right');
+        showToast(`Moved to "${newStatus}"`, 'success');
+        renderKanban();
+      }
+    });
+  });
+}
+
 
 function taskCard(task) {
   const priorityIcon = { low:'🟢', medium:'🟡', high:'🟠', urgent:'🔴' }[task.priority] || '🟡';
