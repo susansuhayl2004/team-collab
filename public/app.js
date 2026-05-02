@@ -1,14 +1,14 @@
 // TeamCollab – Frontend App
 // Firebase for real-time features + Gemini AI via backend
 
-// ── Firebase Config (replace with your project values) ──────────────────────
+// ── Firebase Config ──────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDEMO_REPLACE_WITH_YOUR_KEY",
-  authDomain: "teamcollab-demo.firebaseapp.com",
-  projectId: "teamcollab-demo",
-  storageBucket: "teamcollab-demo.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123"
+  apiKey: "AIzaSyDuWqC7Hhbw24obIImEpw24PUmN4vzKvr4",
+  authDomain: "teamcollab-8c854.firebaseapp.com",
+  projectId: "teamcollab-8c854",
+  storageBucket: "teamcollab-8c854.firebasestorage.app",
+  messagingSenderId: "669739286536",
+  appId: "1:669739286536:web:80f782eb8462322bfc11bd"
 };
 
 // ── State ────────────────────────────────────────────────────────────────────
