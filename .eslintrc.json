@@ -1,0 +1,33 @@
+{
+  "env": {
+    "node": true,
+    "es2022": true,
+    "jest": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "commonjs"
+  },
+  "rules": {
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_|next" }],
+    "no-console": "off",
+    "eqeqeq": ["error", "always"],
+    "curly": ["error", "all"],
+    "no-var": "error",
+    "prefer-const": "error",
+    "prefer-arrow-callback": "error",
+    "object-shorthand": "error",
+    "no-duplicate-imports": "error",
+    "consistent-return": "error",
+    "no-throw-literal": "error",
+    "prefer-promise-reject-errors": "error",
+    "require-await": "error",
+    "no-return-await": "error",
+    "no-shadow": "error",
+    "camelcase": ["error", { "properties": "never" }],
+    "max-len": ["warn", { "code": 120, "ignoreComments": true }],
+    "max-depth": ["warn", 4],
+    "complexity": ["warn", 10]
+  }
+}

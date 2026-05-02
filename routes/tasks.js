@@ -1,60 +1,124 @@
 'use strict';
 
+/**
+ * @fileoverview Tasks API router — manages Kanban-style tasks with filtering,
+ * partial updates, and TTL caching for efficient repeated reads.
+ * @module routes/tasks
+ */
+
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
+const { tasksCache } = require('../utils/cache');
+const { validateRequiredString, validateEnum, assertValid, sanitiseString } = require('../utils/validate');
+const { NotFoundError } = require('../utils/errors');
+
 const router = express.Router();
 
+/** @type {Map<string, import('../types').Task>} In-memory task store */
 const tasks = new Map();
 
-const VALID_STATUSES = ['todo', 'in-progress', 'review', 'done'];
-const VALID_PRIORITIES = ['low', 'medium', 'high', 'urgent'];
+/** @readonly @enum {string} */
+const VALID_STATUSES = Object.freeze(['todo', 'in-progress', 'review', 'done']);
+/** @readonly @enum {string} */
+const VALID_PRIORITIES = Object.freeze(['low', 'medium', 'high', 'urgent']);
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 /**
- * GET /api/tasks
- * Returns all tasks, optionally filtered by teamId
+ * Retrieves a task by ID or throws 404.
+ * @param {string} id
+ * @returns {import('../types').Task}
+ * @throws {NotFoundError}
+ */
+function getTaskOrThrow(id) {
+  const task = tasks.get(id);
+  if (!task) { throw new NotFoundError(`Task '${id}' not found`); }
+  return task;
+}
+
+/**
+ * Builds a cache key from query parameters for list requests.
+ * @param {object} query
+ * @returns {string}
+ */
+function buildListKey(query) {
+  const { teamId = '', status = '', assignee = '' } = query;
+  return `list:${teamId}:${status}:${assignee}`;
+}
+
+/** Invalidates all task list caches. */
+function invalidateTaskCache(taskId) {
+  tasksCache.invalidatePrefix('list:');
+  if (taskId) { tasksCache.delete(taskId); }
+}
+
+// ── Route Handlers ─────────────────────────────────────────────────────────────
+
+/**
+ * @route GET /api/tasks
+ * @description Returns tasks with optional filtering. Cached per query combination.
+ * @query {string} [teamId]   - Filter by team
+ * @query {string} [status]   - Filter by status
+ * @query {string} [assignee] - Filter by assignee name
+ * @returns {{ success: boolean, data: Task[], count: number }}
  */
 router.get('/', (req, res) => {
+  const cacheKey = buildListKey(req.query);
+  const cached = tasksCache.get(cacheKey);
+  if (cached) {
+    return res.set('X-Cache', 'HIT').json(cached);
+  }
+
   let allTasks = Array.from(tasks.values());
-  if (req.query.teamId) allTasks = allTasks.filter(t => t.teamId === req.query.teamId);
-  if (req.query.status) allTasks = allTasks.filter(t => t.status === req.query.status);
-  if (req.query.assignee) allTasks = allTasks.filter(t => t.assignee === req.query.assignee);
-  res.json({ success: true, data: allTasks, count: allTasks.length });
+  if (req.query.teamId) { allTasks = allTasks.filter((t) => t.teamId === req.query.teamId); }
+  if (req.query.status) { allTasks = allTasks.filter((t) => t.status === req.query.status); }
+  if (req.query.assignee) { allTasks = allTasks.filter((t) => t.assignee === req.query.assignee); }
+
+  const payload = { success: true, data: allTasks, count: allTasks.length };
+  tasksCache.set(cacheKey, payload);
+  res.set('X-Cache', 'MISS').json(payload);
 });
 
 /**
- * GET /api/tasks/:id
+ * @route GET /api/tasks/:id
+ * @description Returns a single task by UUID.
+ * @param {string} req.params.id
+ * @returns {{ success: boolean, data: Task }}
  */
 router.get('/:id', (req, res) => {
-  const task = tasks.get(req.params.id);
-  if (!task) return res.status(404).json({ success: false, error: 'Task not found' });
-  res.json({ success: true, data: task });
+  const cached = tasksCache.get(req.params.id);
+  if (cached) {
+    return res.set('X-Cache', 'HIT').json(cached);
+  }
+  const task = getTaskOrThrow(req.params.id);
+  const payload = { success: true, data: task };
+  tasksCache.set(req.params.id, payload);
+  res.set('X-Cache', 'MISS').json(payload);
 });
 
 /**
- * POST /api/tasks
+ * @route POST /api/tasks
+ * @description Creates a new task and invalidates list caches.
+ * @body {{ title: string, description?: string, teamId?: string, assignee?: string,
+ *          priority?: Priority, status?: Status, dueDate?: string }}
+ * @returns {{ success: boolean, data: Task }} 201 Created
  */
 router.post('/', (req, res) => {
-  const { title, description, teamId, assignee, priority, dueDate, status } = req.body;
+  const { title, description, teamId, assignee, priority, status, dueDate } = req.body;
 
-  if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    return res.status(400).json({ success: false, error: 'Task title is required' });
-  }
-  if (title.trim().length > 200) {
-    return res.status(400).json({ success: false, error: 'Title must be 200 characters or less' });
-  }
-  if (priority && !VALID_PRIORITIES.includes(priority)) {
-    return res.status(400).json({ success: false, error: `Priority must be one of: ${VALID_PRIORITIES.join(', ')}` });
-  }
-  if (status && !VALID_STATUSES.includes(status)) {
-    return res.status(400).json({ success: false, error: `Status must be one of: ${VALID_STATUSES.join(', ')}` });
-  }
+  assertValid(
+    validateRequiredString(title, 'Task title', 200),
+    validateEnum(priority, 'priority', VALID_PRIORITIES),
+    validateEnum(status, 'status', VALID_STATUSES)
+  );
 
+  /** @type {import('../types').Task} */
   const task = {
     id: uuidv4(),
-    title: title.trim(),
-    description: description ? description.trim() : '',
+    title: sanitiseString(title),
+    description: sanitiseString(description),
     teamId: teamId || null,
-    assignee: assignee || null,
+    assignee: sanitiseString(assignee) || null,
     priority: priority || 'medium',
     status: status || 'todo',
     dueDate: dueDate || null,
@@ -63,39 +127,46 @@ router.post('/', (req, res) => {
   };
 
   tasks.set(task.id, task);
+  invalidateTaskCache();
   res.status(201).json({ success: true, data: task });
 });
 
 /**
- * PATCH /api/tasks/:id
- * Partially update a task (e.g. change status)
+ * @route PATCH /api/tasks/:id
+ * @description Partially updates a task. Only whitelisted fields are mutated.
+ * @param {string} req.params.id
+ * @body {Partial<Task>}
+ * @returns {{ success: boolean, data: Task }}
  */
 router.patch('/:id', (req, res) => {
-  const task = tasks.get(req.params.id);
-  if (!task) return res.status(404).json({ success: false, error: 'Task not found' });
+  const task = getTaskOrThrow(req.params.id);
 
-  const allowed = ['title', 'description', 'assignee', 'priority', 'status', 'dueDate'];
-  allowed.forEach(field => {
-    if (req.body[field] !== undefined) task[field] = req.body[field];
+  assertValid(
+    validateEnum(req.body.priority, 'priority', VALID_PRIORITIES),
+    validateEnum(req.body.status, 'status', VALID_STATUSES)
+  );
+
+  const mutableFields = ['title', 'description', 'assignee', 'priority', 'status', 'dueDate', 'teamId'];
+  mutableFields.forEach((field) => {
+    if (req.body[field] !== undefined) { task[field] = req.body[field]; }
   });
-
-  if (req.body.status && !VALID_STATUSES.includes(req.body.status)) {
-    return res.status(400).json({ success: false, error: 'Invalid status' });
-  }
-
   task.updatedAt = new Date().toISOString();
+
   tasks.set(task.id, task);
+  invalidateTaskCache(task.id);
   res.json({ success: true, data: task });
 });
 
 /**
- * DELETE /api/tasks/:id
+ * @route DELETE /api/tasks/:id
+ * @description Permanently removes a task.
+ * @param {string} req.params.id
+ * @returns {{ success: boolean, message: string }}
  */
 router.delete('/:id', (req, res) => {
-  if (!tasks.has(req.params.id)) {
-    return res.status(404).json({ success: false, error: 'Task not found' });
-  }
+  getTaskOrThrow(req.params.id);
   tasks.delete(req.params.id);
+  invalidateTaskCache(req.params.id);
   res.json({ success: true, message: 'Task deleted successfully' });
 });
 
