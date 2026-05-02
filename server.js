@@ -42,6 +42,7 @@ app.use(helmet({
         "'self'", "'unsafe-inline'",
         'https://www.gstatic.com', 'https://apis.google.com',
         'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com',
+        'https://*.firebaseapp.com',
       ],
       styleSrc: [
         "'self'", "'unsafe-inline'",
@@ -52,12 +53,20 @@ app.use(helmet({
         "'self'",
         'https://*.firebaseio.com', 'wss://*.firebaseio.com',
         'https://*.googleapis.com', 'https://identitytoolkit.googleapis.com',
+        'https://securetoken.googleapis.com', 'https://firestore.googleapis.com',
+        'https://*.firebaseapp.com',
       ],
       imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
-      frameSrc: ["'self'", 'https://accounts.google.com'],
+      frameSrc: [
+        "'self'",
+        'https://accounts.google.com',
+        'https://*.firebaseapp.com',
+        'https://teamcollab-8c854.firebaseapp.com',
+      ],
     },
   },
 }));
+
 
 // ── CORS ───────────────────────────────────────────────────────────────────────
 
